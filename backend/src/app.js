@@ -23,6 +23,11 @@ function createApp() {
   // Error handler
   // eslint-disable-next-line no-unused-vars
   app.use((err, req, res, next) => {
+    const isBodyParseError =
+      err.type === "entity.parse.failed" || err instanceof SyntaxError;
+    if (isBodyParseError) {
+      return res.status(400).json({ error: "Malformed JSON in request body" });
+    }
     console.error(err);
     res.status(500).json({ error: "Internal server error" });
   });
