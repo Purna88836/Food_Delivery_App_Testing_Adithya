@@ -3,12 +3,21 @@ const store = require("../data/store");
 
 const router = express.Router();
 
-function computeTotal(items) {
+function computeTotal(items, restaurantId) {
   let total = 0;
-  for (const { menuItemId, quantity } of items) {
+  for (const item of items) {
+    if (!item || typeof item !== "object" || Array.isArray(item)) {
+      return { error: "Each item must be an object with menuItemId and quantity" };
+    }
+    const { menuItemId, quantity } = item;
     const menuItem = store.menuItems.get(menuItemId);
     if (!menuItem) {
       return { error: `Menu item ${menuItemId} not found` };
+    }
+    if (menuItem.restaurantId !== restaurantId) {
+      return {
+        error: `Menu item ${menuItemId} does not belong to restaurant ${restaurantId}`,
+      };
     }
     if (!Number.isInteger(quantity) || quantity <= 0) {
       return { error: `Invalid quantity for menu item ${menuItemId}` };
@@ -32,7 +41,7 @@ router.post("/", (req, res) => {
     return res.status(400).json({ error: "items must be a non-empty array" });
   }
 
-  const { total, error } = computeTotal(items);
+  const { total, error } = computeTotal(items, restaurantId);
   if (error) {
     return res.status(400).json({ error });
   }
